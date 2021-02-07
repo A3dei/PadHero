@@ -1,11 +1,11 @@
 #include <Adafruit_NeoPixel.h>
 #include "notas.h"
 #include "canciones.h"
-/* PRUEBA
+
 //Declaraciones de tira de leds
 #ifdef __AVR__
 #include <avr/power.h> // Required for 16 MHz Adafruit Trinket
-#endif*/
+#endif
 #define PIN        10 //Pin datos a leds
 #define NUMPIXELS 36//Numero total de pixeles
 Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
@@ -57,7 +57,10 @@ int aux = 0;              //Contador auxiliar para animacion de puntuacion final
 int aux_animation = 0;    //Contador auxiliar para diferentes animaciones
 uint32_t aux_color = pixels.Color(random(255), random(255), random(255));//Color aleatorio animaciones eleccion
 bool animation = HIGH;    //Bool para pintar ó borrar en animaciones
-
+unsigned long  rebote = 0;
+unsigned long  rebote2 = 0;
+unsigned long  rebote3 = 0;
+unsigned long  rebote4 = 0;
 
 //auxiliares música. Son punteros a arrays en 'canciones.h'
 int lenght = lenght1;
@@ -387,7 +390,7 @@ void Boton1()
 {
 
   static unsigned long ultimo_rebote = 0;
-  static unsigned long rebote = millis();
+  rebote = millis();
 
   if (rebote - ultimo_rebote > 250)
   {
@@ -396,20 +399,12 @@ void Boton1()
 
   }
   ultimo_rebote = rebote;
-  /*if (millis() - rebote > periodo - 50)
-    {
-
-    rebote = millis();
-    chequeo = 1;
-
-
-    }*/
 }
 
 void Boton2()
 {
   static unsigned long ultimo_rebote2 = 0;
-  static unsigned long rebote2 = millis();
+  rebote2 = millis();
 
   if (rebote2 - ultimo_rebote2 > 250)
   {
@@ -418,21 +413,12 @@ void Boton2()
 
   }
   ultimo_rebote2 = rebote2;
-  /*
-    if (millis() - rebote2 > periodo - 50)
-    {
-
-    rebote2 = millis();
-
-    chequeo = 2;
-
-    }*/
 }
 
 void Boton3()
 {
   static unsigned long ultimo_rebote3 = 0;
-  static unsigned long rebote3 = millis();
+  rebote3 = millis();
 
   if (rebote3 - ultimo_rebote3 > 250)
   {
@@ -441,20 +427,12 @@ void Boton3()
 
   }
   ultimo_rebote3 = rebote3;
-  /*
-    if (millis() - rebote3 > periodo - 50)
-    {
-
-    rebote3 = millis();
-    chequeo = 3;
-
-    }*/
 }
 
 void Boton4()
 {
   static unsigned long ultimo_rebote4 = 0;
-  static unsigned long rebote4 = millis();
+  rebote4 = millis();
 
   if (rebote4 - ultimo_rebote4 > 250)
   {
