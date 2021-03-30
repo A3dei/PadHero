@@ -15,7 +15,7 @@ Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 //Para saber qué numero corresponde a cada led
 const int Matrix4x9[4][9] =
 {
-  {0, 1, 2, 3, 4, 5, 6, 7, 8},
+  {0,   1,  2,  3,  4,  5,  6,  7, 8},
   {17, 16, 15, 14, 13, 12, 11, 10, 9},
   {18, 19, 20, 21, 22, 23, 24, 25, 26},
   {35, 34, 33, 32, 31, 30, 29, 28, 27}
@@ -36,6 +36,8 @@ const int ENCENDIENDO = 0;//Animacion de encendido
 const int ELECCION = 1;   //Elegimos cancion
 const int JUEGO = 2;      //Empieza el juego con la cancion seleccionada
 const int FINAL = 3;      //Animacion de fallo y vuelta a ENCENDIENDO
+const int PIANO = 4;      //Modo piano
+const int SIMON = 5;
 
 //Eventos
 int estado = ENCENDIENDO; //Estado inicial
@@ -61,6 +63,17 @@ unsigned long  rebote = 0;
 unsigned long  rebote2 = 0;
 unsigned long  rebote3 = 0;
 unsigned long  rebote4 = 0;
+
+/*Piano*/
+int c1 = 0;
+int conter = 9;
+
+/*Simon*/
+const int MAX_LEVEL = 100;
+int sequence[MAX_LEVEL];
+int your_sequence[MAX_LEVEL];
+int level = 1;
+int velocity = 1000;
 
 //auxiliares música. Son punteros a arrays en 'canciones.h'
 int lenght = lenght1;
@@ -119,7 +132,7 @@ void loop()
         timer = 0;  //Reseteamos interrupcion del timer
       }
       //Deteccion de flanco de bajada
-      if (chequeo) //Da igual que boton se pulse(si no devuelve 0 cambiara a siguiente estado)
+      if (chequeo == 1 || chequeo == 4) //Cambiará a Guitar hero mode //BOTON 1
       {
         chequeo = 0;
         tone(11, 3128, 1000 / 4); //nota que suena al pulsar
@@ -128,10 +141,115 @@ void loop()
         pixels.show();
         estado = ELECCION;
       }
+      if (chequeo == 2) //Cambiará a Pianillo mode //BOTON 2
+      {
+        chequeo = 0;
+        tone(11, 3128, 1000 / 4); //nota que suena al pulsar
+        pixels.clear();
+        pixels.show();
+        AnimacionPiano();
+        estado = PIANO;
+      }
+      if (chequeo == 3) //Cambiará a SIMON DICE mode //BOTON 3
+      {
+        chequeo = 0;
+        tone(11, 3128, 1000 / 4); //nota que suena al pulsar
+        pixels.clear();
+        pixels.show();
+        estado = SIMON;
+      }
 
       break;
 
-    case (ELECCION)://*ELECCION**ELECCION**ELECCION**ELECCION**ELECCION**ELECCION**ELECCION**ELECCION**ELECCION***//
+    case (PIANO):
+
+      while (digitalRead(0) == LOW)
+      {
+        c1 = 1;
+        tone(11, 440, 15);
+      }
+      while (digitalRead(1) == LOW)
+      {
+        c1 = 2;
+        tone(11, 261.63, 25);
+      }
+      while (digitalRead(2) == LOW)
+      {
+        c1 = 3;
+        tone(11, 392, 25);
+      }
+      while (digitalRead(3) == LOW)
+      {
+        c1 = 4;
+        tone(11, 329.63, 25);
+      }
+
+      /***********************/
+      if (c1 == 1)
+      {
+
+        Serial.println(conter);
+        for (int i = 0; i < 4; i++)
+        {
+          Serial.println(Matrix4x9[i][conter]);
+          pixels.setPixelColor(Matrix4x9[i][conter], pixels.Color(255, 255, 0));
+        }
+        conter++;
+        c1 = 0;
+      }
+      if (c1 == 2)
+      {
+
+        Serial.println(conter);
+        for (int i = 0; i < 4; i++)
+        {
+          pixels.setPixelColor(Matrix4x9[i][conter], pixels.Color(255, 0, 0));
+        }
+        conter++;
+        c1 = 0;
+      }
+      if (c1 == 3)
+      {
+
+        Serial.println(conter);
+        for (int i = 0; i < 4; i++)
+        {
+          pixels.setPixelColor(Matrix4x9[i][conter], pixels.Color(255, 0, 255));
+        }
+        conter++;
+        c1 = 0;
+      }
+      if (c1 == 4)
+      {
+
+        Serial.println(conter);
+        for (int i = 0; i < 4; i++)
+        {
+          pixels.setPixelColor(Matrix4x9[i][conter], pixels.Color(0, 255, 0));
+        }
+        conter++;
+        c1 = 0;
+      }
+      if (conter >= 8)
+      {
+        conter = 0;
+      }
+      pixels.show();
+      delay(50);
+      break;
+
+    case (SIMON):
+      if (level == 1)
+        generate_sequence();//generate a sequence;
+
+
+      show_sequence();    //show the sequence
+      get_sequence();     //wait for your sequence
+
+
+      break;
+
+    case (ELECCION)://Eleccion DE CANCION
 
       if (timer)
       {
@@ -164,8 +282,6 @@ void loop()
           animation = !animation;
           aux_animation = 0;
         }
-
-
 
       }
 
@@ -445,9 +561,9 @@ void Boton4()
 void eligeMelodia()
 {
   if (eleccion_cancion < 0)
-    eleccion_cancion = 8;
+    eleccion_cancion = 5;
 
-  if (eleccion_cancion > 8)
+  if (eleccion_cancion > 7)
     eleccion_cancion = 0;
 
   if (eleccion_cancion == 0)
@@ -486,22 +602,201 @@ void eligeMelodia()
     tempo = intro_tempo;
     lenght = intro_lenght;
   }
-  if (eleccion_cancion == 6)
+}
+void AnimacionPiano()
+{
+  pixels.setPixelColor(8, pixels.Color(255, 255, 0));
+  pixels.setPixelColor(9, pixels.Color(255, 0, 0));
+  pixels.setPixelColor(26, pixels.Color(255, 0, 255));
+  pixels.setPixelColor(27, pixels.Color(0, 255, 0));
+  pixels.show();
+}
+void show_sequence()
+{
+  pixels.clear();
+  pixels.show();
+
+  for (int i = 0; i < level; i++)
   {
-    melody = melody6;
-    tempo = tempo6;
-    lenght = lenght6;
+    if (sequence[i] == 1)
+    {
+      //Enciende led0
+      for (int i = 0; i <= 8; i++)
+        pixels.setPixelColor(i, pixels.Color(255, 255, 0));
+
+      tone(11, 440, 50);
+    }
+    if (sequence[i] == 2)
+    {
+      //Enciende led1
+      for (int i = 9; i <= 17; i++)
+        pixels.setPixelColor(i, pixels.Color(255, 0, 0));
+      tone(11, 261.63, 50);
+    }
+    if (sequence[i] == 3)
+    {
+      //Enciende led2
+      for (int i = 18; i <= 26; i++)
+        pixels.setPixelColor(i, pixels.Color(0, 255, 0));
+      tone(11, 392, 50);
+    }
+    if (sequence[i] == 4)
+    {
+      //Enciende led3
+      for (int i = 27; i <= 35; i++)
+        pixels.setPixelColor(i, pixels.Color(0, 0, 255));
+      tone(11, 329.63, 50);
+    }
+    pixels.show();
+
+    delay(velocity);
+
+    pixels.clear();
+    pixels.show();
+    delay(200);
   }
-  if (eleccion_cancion == 7)
+  chequeo == 0;
+}
+
+void get_sequence()
+{
+  int flag = 0; //this flag indicates if the sequence is correct
+
+  for (int i = 0; i < level; i++)
   {
-    melody = melody7;
-    tempo = tempo7;
-    lenght = lenght7;
+    flag = 0;
+    while (flag == 0)
+    {
+      if (chequeo == 1)
+      {
+        chequeo = 0;
+        for (int i = 0; i <= 8; i++)
+          pixels.setPixelColor(i, pixels.Color(255, 255, 0));
+
+        pixels.show();
+        tone(11, 440, 50);
+
+        your_sequence[i] = 1;
+        flag = 1;
+        delay(200);
+        if (your_sequence[i] != sequence[i])
+        {
+          wrong_sequence();
+          return;
+        }
+        pixels.clear();
+        pixels.show();
+      }
+      if (chequeo == 2)
+      {
+        chequeo = 0;
+        for (int i = 9; i <= 17; i++)
+          pixels.setPixelColor(i, pixels.Color(255, 0, 0));
+        pixels.show();
+        tone(11, 261.63, 50);
+
+        your_sequence[i] = 2;
+        flag = 1;
+        delay(200);
+        if (your_sequence[i] != sequence[i])
+        {
+          wrong_sequence();
+          return;
+        }
+        pixels.clear();
+        pixels.show();
+      }
+      if (chequeo == 3)
+      {
+        chequeo = 0;
+        for (int i = 18; i <= 26; i++)
+          pixels.setPixelColor(i, pixels.Color(0, 255, 0));
+        pixels.show();
+        tone(11, 392, 50);
+
+        your_sequence[i] = 3;
+        flag = 1;
+        delay(200);
+        if (your_sequence[i] != sequence[i])
+        {
+          wrong_sequence();
+          return;
+        }
+        pixels.clear();
+        pixels.show();
+      }
+      if (chequeo == 4)
+      {
+        chequeo = 0;
+        for (int i = 27; i <= 35; i++)
+          pixels.setPixelColor(i, pixels.Color(0, 0, 255));
+        pixels.show();
+        tone(11, 329.63, 50);
+
+        your_sequence[i] = 4;
+        flag = 1;
+        delay(200);
+        if (your_sequence[i] != sequence[i])
+        {
+          wrong_sequence();
+          return;
+        }
+        pixels.clear();
+        pixels.show();
+      }
+    }
   }
-  if (eleccion_cancion == 8)
+  right_sequence();
+}
+
+void generate_sequence()
+{
+  randomSeed(millis()); //in this way is really random!!!
+
+  for (int i = 0; i < MAX_LEVEL; i++)
   {
-    melody = melody8;
-    tempo = tempo8;
-    lenght = lenght8;
+    sequence[i] = random(1, 5);
+    Serial.print(sequence[i]);
   }
+}
+void wrong_sequence()
+{
+  for (unsigned i = 0; i <= 35; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(255, 0, 0));
+  }
+  pixels.show();
+  tone(11, 50, 500); // Play thisNote for duration.
+  delay(500);
+  pixels.clear();
+  pixels.show();
+
+  puntuacion_total = (level - 1) * 5;
+  estado = FINAL;
+}
+
+void right_sequence()
+{
+
+  pixels.clear();
+  pixels.show();
+  delay(250);
+
+  for (int i = 0; i <= 35; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(0, 255, 0));
+  }
+  pixels.show();
+
+  tone(11, 1080, 500);
+  delay(500);
+
+  pixels.clear();
+  pixels.show();
+  delay(500);
+
+  if (level < MAX_LEVEL)
+    level++;
+
+  velocity -= 50; //increase difficulty
 }
